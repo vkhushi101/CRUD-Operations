@@ -18,4 +18,5 @@ run:
 
 test:
 	make db-migrate
+	export PYTHONPATH=$(pwd) 
 	pytest -v

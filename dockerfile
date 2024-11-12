@@ -13,9 +13,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Exposes port 8080 to the outside world
 EXPOSE 8080
 
-# Defines env variables
+# Define environment variables for Flask
 ENV FLASK_APP=src.app
 ENV FLASK_RUN_HOST=0.0.0.0
+ENV FLASK_ENV=development
 
 # Copies the setup.sh script into the container
 COPY ./setup.sh /app/setup.sh

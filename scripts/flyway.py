@@ -1,7 +1,7 @@
 import subprocess
-from dotenv import load_dotenv
 import os
 import sys
+from dotenv import load_dotenv
 
 # Load env variables from .env file
 load_dotenv()
@@ -22,10 +22,11 @@ if not db_host or not db_user or not db_password or not db_name:
 # Base Flyway command to be reused for clean and migration operations
 # -X enables verbose logging (optional)
 def run_flyway(command):
+    print(f"Beginning running flyway {command}")
     flyway_command = [
         "flyway",
         "-X",
-        f"-url=jdbc:mysql://localhost:3306/{db_name}",
+        f"-url=jdbc:mysql://{db_host}:3306/{db_name}",
         f"-user={db_user}",
         f"-password={db_password}",
         f"-locations=filesystem:{migrations_dir}",
@@ -35,6 +36,7 @@ def run_flyway(command):
     flyway_command.append(command)
 
     try:
+        print(f"Running flyway command {flyway_command}")
         subprocess.run(flyway_command, check=True)
         print(f"Flyway {command} executed successfully.")
     except subprocess.CalledProcessError as e:

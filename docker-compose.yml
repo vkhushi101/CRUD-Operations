@@ -1,17 +1,48 @@
 services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USER}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  flyway:
+    image: flyway/flyway:9.0
+    container_name: flyway
+    environment:
+      - FLYWAY_URL=jdbc:mysql://mysql:3306/${DB_NAME}?useSSL=false&allowPublicKeyRetrieval=true
+      - FLYWAY_USER=${DB_USER}
+      - FLYWAY_PASSWORD=${DB_PASSWORD}
+      - FLYWAY_LOCATIONS=filesystem:/app/migrations
+    volumes:
+      - .:/app
+    entrypoint: ["flyway", "migrate"]
+    depends_on:
+      - mysql
+
   flask-app:
     build: .
     container_name: flask-app
     ports:
       - "8080:8080"
     environment:
-    # environement variables coming from python .env file
-      - DB_HOST=${DB_HOST}         
-      - DB_NAME=${DB_NAME}        
-      - DB_USER=${DB_USER}         
+      - DB_HOST=mysql
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - FLASK_APP=src.app
       - FLASK_RUN_HOST=0.0.0.0
     volumes:
       - .:/app
-    command: ["./setup.sh"]
+    command: ["flask", "run", "--host=0.0.0.0", "--port=8080"]
+    depends_on:
+      - flyway
+
+volumes:
+  mysql-data:
