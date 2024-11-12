@@ -1,0 +1,284 @@
+openapi: 3.0.0
+info:
+  title: "Storage Operations"
+  version: v1
+  description: "Endpoints to perform the following CRUD operations in our data storage system."
+  contact:
+    name: Khushi Valia
+    email: vkhushi101@gmail.com
+servers:
+  - url: http://127.0.0.1:8080/
+    description: "The base URL for Storage Operations API."
+
+security:
+  - apiKeyAuth: []  
+  # All operations will require this header by default for authentication.
+
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-KEY
+
+  # these parameters are used for specifically the GET requests
+  parameters:
+    NamespaceParam:
+      name: "namespace"
+      in: "query"
+      required: true
+      schema:
+        type: string
+      description: The namespace to store key-value pair in.
+    KeyParam:
+      name: "key"
+      in: "query"
+      required: true
+      schema:
+        type: string
+      description: The key stored with a given value in a specified namespace.
+    ValueParam:
+      name: "value"
+      in: "query"
+      required: true
+      schema:
+        type: string
+      description: The value stored with a given key in a specified namespace.
+
+  schemas:
+    # specifically for /set operation - defining here for readability
+    NamespaceKeyValueInRequest:
+      type: object
+      properties:
+        namespace:
+          type: string
+        key:
+          type: string
+        value:
+          type: string
+      required:
+        - key
+        - namespace
+        - value
+
+    # specifically for /delete operation - defining here for readability
+    NamespaceKeyInRequest:
+      type: object
+      properties:
+        namespace:
+          type: string
+        key:
+          type: string
+      required:
+        - key
+        - namespace
+
+    # Response schema for 200 OK responses
+    SuccessResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Success"
+        data:
+          type: string
+          description: "The data returned, if applicable (e.g., value returned from GET requests)."
+
+    # Response schema for 4XX Error responses
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Bad Request"
+        error:
+          type: string
+          description: "A detailed error message explaining the reason for the failure."
+
+    # Response schema for 5XX Error responses
+    InternalServerErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Internal Server Error"
+        error:
+          type: string
+          description: "A detailed error message explaining the reason for the internal server failure."
+
+paths:
+  # Using PUT instead of POST here to support idempotency (ref=https://restfulapi.net/rest-put-vs-post/)
+  /set:
+    put:
+      description: "Sets the key-value pair in the given namespace."
+      operationId: "setKeyValueInNamespace"
+      summary: "Sets the key-value pair in the given namespace."
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NamespaceKeyValueInRequest'
+      responses:
+        200:
+          description: "Successfully set the key-value pair in the given namespace."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        400:
+          description: "Bad request - Invalid input, missing fields, or incorrect values."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: "Internal server error - Unexpected error occurred during the operation."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /get:
+    get:
+      operationId: "getValueOfKeyInNamespace"
+      summary: "Gets the value for the given key in the specified namespace."
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/NamespaceParam'
+        - $ref: '#/components/parameters/KeyParam'
+      responses:
+        200:
+          description: "Successfully retrieved the value for the given key and namespace."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    type: string
+                    description: "The value for the requested key in the given namespace."
+        400:
+          description: "Bad request - Invalid query parameters, or malformed request."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: "Key not found in the specified namespace."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: "Internal server error - Unexpected error occurred during the operation."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /delete:
+    delete:
+      operationId: "deleteKeyValueFromNamespace"
+      summary: "Deletes the specified key from the given namespace."
+      security:
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NamespaceKeyInRequest'
+      responses:
+        200:
+          description: "Successfully deleted the key from the given namespace."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SuccessResponse'
+        400:
+          description: "Bad request - Invalid input or malformed request."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        404:
+          description: "Not Found - Key not found in the specified namespace. Intentionally want to throw here to indicate operation not complete."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: "Internal server error - Unexpected error occurred during the operation."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /count:
+    get:
+      operationId: "getValueCountInNamespace"
+      summary: "Returns the count of the specified value in the given namespace."
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/NamespaceParam'
+        - $ref: '#/components/parameters/KeyParam'
+      responses:
+        200:
+          description: "Successfully retrieved the count of the specified value in the given namespace."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    description: "The count of the specified value in the given namespace."
+        400:
+          description: "Bad request - Invalid input or malformed request."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: "Internal server error - Unexpected error occurred during the operation."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
+
+  /countGlobal:
+    get:
+      operationId: "getGlobalValueCount"
+      summary: "Returns the global count of specified value across all namespaces."
+      security:
+        - apiKeyAuth: []
+      parameters:
+        - $ref: '#/components/parameters/ValueParam'
+      responses:
+        200:
+          description: "Successfully retrieved the global count of specified value."
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    description: "The global count of the specified value."
+        400:
+          description: "Bad request - Invalid input or malformed request."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        500:
+          description: "Internal server error - Unexpected error occurred during the operation."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InternalServerErrorResponse'
