@@ -1,6 +1,4 @@
 
-Hello Midstream team! 
-
 The following steps are necessary to spin up the project and hit the endpoints to perform the CRUD operations:
 
 
